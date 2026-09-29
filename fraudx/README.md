@@ -20,6 +20,15 @@ npx expo run:android                                  # local, needs Android Stu
 npx eas-cli@latest build -p android --profile preview # cloud build that produces an installable APK
 ```
 
+### Web demo on GitHub Pages
+The landing page (`/index.html` at the repo root) embeds the web build of this app from `/app/`. After changing the app, rebuild the demo:
+
+```bash
+npm run build:pages     # writes ../app and ../.nojekyll (use REPO_NAME=... if the repo is renamed)
+```
+
+Then commit and push. Pages serves the page from `main`, root folder.
+
 ### Demo script (about 2 minutes)
 1. **Protection** tab: shows the protection status, stats and the messages that need attention.
 2. Tap **Simulate incoming SMS**. A scam alert appears at once, before the message has been opened. Tap *See why it's dangerous*.

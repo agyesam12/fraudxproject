@@ -1,0 +1,671 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FraudX: Stop MoMo Scams</title>
+<meta name="description" content="FraudX is an AI-powered prototype that checks MTN MoMo-related messages on the phone and warns customers before they click, share their PIN or send money.">
+<meta name="theme-color" content="#111418">
+<link rel="icon" href="app/favicon.ico">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #111418;
+    --ink-2: #1B1F25;
+    --ink-soft: #3F4652;
+    --muted: #6B7380;
+    --line: #E4E2DA;
+    --bg: #F7F6F1;
+    --surface: #FFFFFF;
+    --brand: #FFCB05;
+    --brand-soft: #FFF6CC;
+    --danger: #C62828;
+    --danger-bg: #FDEBEB;
+    --warn: #A65B00;
+    --warn-bg: #FFF1D6;
+    --safe: #0E7C55;
+    --safe-bg: #E4F5EC;
+    --radius: 18px;
+    --max: 1160px;
+    color-scheme: light;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font: 16px/1.6 Inter, system-ui, -apple-system, "Segoe UI", sans-serif;
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+  }
+  h1, h2, h3 { font-family: "Plus Jakarta Sans", Inter, sans-serif; line-height: 1.15; margin: 0; letter-spacing: -0.02em; }
+  h2 { font-size: clamp(28px, 4vw, 40px); font-weight: 800; }
+  h3 { font-size: 18px; font-weight: 700; }
+  p { margin: 0; }
+  a { color: inherit; }
+  .wrap { max-width: var(--max); margin: 0 auto; padding: 0 16px; }
+  @media (min-width: 720px) { .wrap { padding: 0 32px; } }
+  .eyebrow { font-size: 12px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
+  .lede { font-size: 18px; color: var(--ink-soft); max-width: 60ch; }
+  section { padding: 88px 0; }
+  .section-head { display: grid; gap: 14px; margin-bottom: 44px; max-width: 760px; }
+
+  /* Nav */
+  .nav { position: sticky; top: 0; z-index: 20; background: rgba(17,20,24,.92); backdrop-filter: blur(10px); border-bottom: 1px solid rgba(255,255,255,.06); }
+  .nav .wrap { display: flex; align-items: center; gap: 24px; height: 64px; }
+  .logo { display: flex; align-items: center; gap: 10px; color: #fff; text-decoration: none; font: 800 20px "Plus Jakarta Sans", sans-serif; letter-spacing: -.02em; }
+  .logo-mark { width: 32px; height: 32px; border-radius: 9px; background: var(--brand); display: grid; place-items: center; }
+  .nav-links { display: none; gap: 22px; margin-left: auto; }
+  .nav-links a { color: rgba(255,255,255,.72); text-decoration: none; font-size: 14px; font-weight: 600; }
+  .nav-links a:hover { color: #fff; }
+  .nav-cta { margin-left: auto; }
+  @media (min-width: 900px) { .nav-links { display: flex; } .nav-cta { margin-left: 0; } }
+
+  /* Buttons */
+  .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 46px; padding: 0 20px; border-radius: 12px; border: 1px solid transparent; font: 700 15px Inter, sans-serif; text-decoration: none; cursor: pointer; transition: transform .12s ease, opacity .12s; }
+  .btn:active { transform: scale(.98); }
+  .btn-brand { background: var(--brand); color: var(--ink); }
+  .btn-brand:hover { background: #FFD633; }
+  .btn-ghost { background: transparent; color: #fff; border-color: rgba(255,255,255,.22); }
+  .btn-ghost:hover { border-color: rgba(255,255,255,.5); }
+  .btn-dark { background: var(--ink); color: #fff; }
+  .btn-line { background: var(--surface); color: var(--ink); border-color: var(--line); }
+  .btn-sm { min-height: 38px; padding: 0 14px; font-size: 14px; border-radius: 10px; }
+  .btn:disabled { opacity: .5; cursor: not-allowed; }
+
+  /* Hero */
+  .hero { background: var(--ink); color: #fff; padding: 56px 0 72px; position: relative; overflow: hidden; }
+  .hero::before { content: ""; position: absolute; inset: auto -20% -40% auto; width: 720px; height: 720px; border-radius: 50%; background: radial-gradient(closest-side, rgba(255,203,5,.16), transparent); pointer-events: none; }
+  .hero-grid { display: grid; gap: 40px; grid-template-areas: "pitch" "phone" "controls"; position: relative; }
+  @media (min-width: 980px) {
+    .hero-grid { grid-template-columns: 1fr 400px; grid-template-areas: "pitch phone" "controls phone"; column-gap: 64px; row-gap: 32px; align-items: start; }
+    .phone-col { position: sticky; top: 84px; }
+  }
+  .pitch { grid-area: pitch; display: grid; gap: 22px; padding-top: 12px; }
+  .tags { display: flex; flex-wrap: wrap; gap: 8px; }
+  .tag { font-size: 12px; font-weight: 700; padding: 6px 12px; border-radius: 999px; background: rgba(255,255,255,.08); color: rgba(255,255,255,.8); border: 1px solid rgba(255,255,255,.1); }
+  .hero h1 { font-size: clamp(38px, 6.2vw, 64px); font-weight: 800; }
+  .hero h1 em { font-style: normal; color: var(--brand); }
+  .hero .lede { color: rgba(255,255,255,.72); }
+  .cta-row { display: flex; flex-wrap: wrap; gap: 12px; }
+  .facts { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1px; background: rgba(255,255,255,.08); border-radius: 14px; overflow: hidden; margin-top: 8px; }
+  @media (min-width: 560px) { .facts { grid-template-columns: repeat(4, 1fr); } }
+  .fact { background: var(--ink); padding: 14px 16px; }
+  .fact b { display: block; font: 800 22px "Plus Jakarta Sans", sans-serif; color: #fff; }
+  .fact span { font-size: 13px; color: rgba(255,255,255,.6); }
+
+  /* Phone */
+  .phone-col { grid-area: phone; display: grid; justify-items: center; gap: 14px; }
+  .phone { width: min(372px, 100%); background: #0A0C0F; border-radius: 48px; padding: 12px; box-shadow: 0 0 0 1px rgba(255,255,255,.12), 0 40px 80px rgba(0,0,0,.5); position: relative; }
+  .phone::before { content: ""; position: absolute; top: 20px; left: 50%; transform: translateX(-50%); width: 92px; height: 24px; border-radius: 14px; background: #0A0C0F; z-index: 2; }
+  .screen { border-radius: 37px; overflow: hidden; background: #F3F4F6; height: min(760px, calc(100vh - 150px)); min-height: 560px; position: relative; }
+  .screen iframe { position: relative; z-index: 1; width: 100%; height: 100%; border: 0; display: block; padding-top: 34px; background: #F3F4F6; }
+  .screen-loading[hidden] { display: none; }
+  .screen-loading { position: absolute; inset: 0; display: grid; place-items: center; color: var(--muted); font-size: 14px; }
+  .phone-note { font-size: 13px; color: rgba(255,255,255,.55); text-align: center; }
+  .phone-note a { color: var(--brand); font-weight: 600; }
+
+  /* Controls */
+  .controls { grid-area: controls; background: var(--ink-2); border: 1px solid rgba(255,255,255,.08); border-radius: var(--radius); padding: 22px; display: grid; gap: 18px; }
+  .controls h3 { color: #fff; display: flex; align-items: center; gap: 10px; }
+  .live-dot { width: 8px; height: 8px; border-radius: 50%; background: #3DDC97; box-shadow: 0 0 0 4px rgba(61,220,151,.18); }
+  .controls p { color: rgba(255,255,255,.62); font-size: 14px; }
+  .controls label { display: block; font-size: 12px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: rgba(255,255,255,.5); margin-bottom: 6px; }
+  .controls input, .controls textarea { width: 100%; background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.14); color: #fff; border-radius: 10px; padding: 11px 12px; font: 15px/1.45 Inter, sans-serif; resize: vertical; }
+  .controls input:focus, .controls textarea:focus { outline: 2px solid var(--brand); outline-offset: 1px; border-color: transparent; }
+  .controls textarea { min-height: 92px; }
+  .presets { display: flex; flex-wrap: wrap; gap: 8px; }
+  .preset { font: 600 13px Inter, sans-serif; color: rgba(255,255,255,.82); background: transparent; border: 1px solid rgba(255,255,255,.18); border-radius: 999px; padding: 6px 12px; cursor: pointer; }
+  .preset:hover { border-color: var(--brand); color: var(--brand); }
+  .control-row { display: flex; flex-wrap: wrap; gap: 10px; }
+  .status { font-size: 13px; color: rgba(255,255,255,.6); min-height: 20px; }
+  .status.ok { color: #3DDC97; }
+  .status.err { color: #FF8A80; }
+
+  /* Cards */
+  .grid { display: grid; gap: 16px; }
+  @media (min-width: 640px) { .grid-2 { grid-template-columns: repeat(2, 1fr); } .grid-3, .grid-5 { grid-template-columns: repeat(2, 1fr); } }
+  @media (min-width: 960px) { .grid-3 { grid-template-columns: repeat(3, 1fr); } .grid-5 { grid-template-columns: repeat(5, 1fr); } }
+  .card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 24px; display: grid; gap: 10px; align-content: start; }
+  .card p { color: var(--ink-soft); font-size: 15px; }
+  .icon { width: 44px; height: 44px; border-radius: 12px; display: grid; place-items: center; background: var(--brand-soft); color: var(--ink); }
+  .icon svg { width: 22px; height: 22px; }
+  .icon.red { background: var(--danger-bg); color: var(--danger); }
+
+  /* Steps */
+  .steps { display: grid; gap: 16px; counter-reset: step; }
+  @media (min-width: 900px) { .steps { grid-template-columns: repeat(3, 1fr); } }
+  .step { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 28px 24px; position: relative; display: grid; gap: 10px; }
+  .step::before { counter-increment: step; content: counter(step); font: 800 13px "Plus Jakarta Sans", sans-serif; width: 30px; height: 30px; border-radius: 50%; background: var(--ink); color: var(--brand); display: grid; place-items: center; }
+  .step p { color: var(--ink-soft); font-size: 15px; }
+
+  /* Anatomy */
+  .anatomy { display: grid; gap: 24px; }
+  @media (min-width: 960px) { .anatomy { grid-template-columns: 1.05fr 1fr; gap: 40px; align-items: start; } }
+  .sms { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 24px; display: grid; gap: 16px; }
+  .sms-head { display: flex; align-items: center; gap: 12px; }
+  .avatar { width: 42px; height: 42px; border-radius: 50%; background: var(--danger-bg); color: var(--danger); font-weight: 800; display: grid; place-items: center; }
+  .sms-bubble { background: #F1F2F4; border-radius: 4px 18px 18px 18px; padding: 16px 18px; font-size: 17px; line-height: 1.75; }
+  mark { background: var(--danger-bg); color: var(--danger); font-weight: 600; border-radius: 4px; padding: 1px 3px; }
+  mark sup, .sig-num { font: 800 11px Inter, sans-serif; }
+  mark sup { background: var(--danger); color: #fff; border-radius: 50%; width: 17px; height: 17px; display: inline-grid; place-items: center; margin-left: 3px; vertical-align: 2px; }
+  .verdict { display: flex; gap: 18px; align-items: center; background: var(--ink); color: #fff; border-radius: 14px; padding: 16px 18px; }
+  .ring { flex: none; }
+  .verdict small { display: inline-block; font-weight: 800; font-size: 12px; background: var(--danger); padding: 3px 9px; border-radius: 999px; margin-bottom: 6px; }
+  .verdict b { display: block; font: 700 17px "Plus Jakarta Sans", sans-serif; }
+  .signals { display: grid; gap: 12px; }
+  .signal { display: grid; grid-template-columns: 28px 1fr auto; gap: 14px; align-items: start; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 16px 18px; }
+  .sig-num { width: 26px; height: 26px; border-radius: 50%; background: var(--danger); color: #fff; display: grid; place-items: center; font-size: 12px; }
+  .signal h3 { font-size: 16px; }
+  .signal p { color: var(--ink-soft); font-size: 14px; margin-top: 3px; }
+  .weight { font: 800 14px "Plus Jakarta Sans", sans-serif; color: var(--danger); white-space: nowrap; }
+  .ai-row { background: var(--brand-soft); border-radius: 14px; padding: 16px 18px; display: grid; gap: 8px; }
+  .bar { height: 8px; background: rgba(17,20,24,.1); border-radius: 4px; overflow: hidden; }
+  .bar i { display: block; height: 100%; background: var(--danger); border-radius: 4px; }
+  .footnote { font-size: 13px; color: var(--muted); }
+
+  /* Scoring */
+  .dark { background: var(--ink); color: #fff; }
+  .dark .eyebrow { color: rgba(255,255,255,.5); }
+  .dark .lede { color: rgba(255,255,255,.7); }
+  .pipeline { display: grid; gap: 14px; align-items: stretch; }
+  @media (min-width: 960px) { .pipeline { grid-template-columns: 1fr auto 1fr auto 1.2fr; } }
+  .node { background: var(--ink-2); border: 1px solid rgba(255,255,255,.1); border-radius: var(--radius); padding: 22px; display: grid; gap: 8px; align-content: start; }
+  .node h3 { color: #fff; }
+  .node p, .node li { color: rgba(255,255,255,.66); font-size: 14px; }
+  .node ul { margin: 4px 0 0; padding-left: 18px; display: grid; gap: 4px; }
+  .node .pct { font: 800 30px "Plus Jakarta Sans", sans-serif; color: var(--brand); }
+  .op { display: grid; place-items: center; font: 800 26px "Plus Jakarta Sans", sans-serif; color: var(--brand); }
+  .scale { display: grid; grid-template-columns: 35fr 30fr 35fr; border-radius: 10px; overflow: hidden; font-size: 12px; font-weight: 700; margin-top: 8px; }
+  .scale span { padding: 8px 10px; }
+  .scale-ticks { display: flex; justify-content: space-between; font-size: 11px; color: rgba(255,255,255,.5); margin-top: 4px; }
+
+  /* Threat grid */
+  .threat { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 18px; display: grid; gap: 6px; align-content: start; }
+  .threat h3 { font-size: 15px; }
+  .threat p { font-size: 14px; color: var(--ink-soft); }
+  .threat q { font-size: 13px; color: var(--danger); font-style: italic; quotes: "“" "”"; }
+
+  /* Platform table */
+  .table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); }
+  table { width: 100%; border-collapse: collapse; min-width: 560px; font-size: 15px; }
+  th, td { text-align: left; padding: 16px 18px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); background: #FBFAF6; }
+  tr:last-child td { border-bottom: 0; }
+  .yes { color: var(--safe); font-weight: 700; }
+  .no { color: var(--danger); font-weight: 700; }
+  .callout { margin-top: 18px; background: var(--warn-bg); border-radius: 14px; padding: 16px 18px; font-size: 15px; color: #5A3700; }
+
+  /* Tech */
+  .pills { display: flex; flex-wrap: wrap; gap: 8px; }
+  .pill { font-size: 13px; font-weight: 600; background: var(--surface); border: 1px solid var(--line); border-radius: 999px; padding: 6px 12px; }
+  pre { background: var(--ink); color: #E8EAED; border-radius: 14px; padding: 18px 20px; overflow-x: auto; font: 14px/1.7 ui-monospace, "Cascadia Code", Consolas, monospace; margin: 0; }
+  pre .c { color: #8A93A0; }
+
+  /* Roadmap */
+  .roadmap { display: grid; gap: 12px; }
+  .road { display: grid; grid-template-columns: 120px 1fr; gap: 16px; padding: 18px 0; border-top: 1px solid var(--line); }
+  .road b { font: 700 14px "Plus Jakarta Sans", sans-serif; }
+  .road p { color: var(--ink-soft); font-size: 15px; }
+  @media (max-width: 560px) { .road { grid-template-columns: 1fr; gap: 4px; } }
+
+  footer { background: var(--ink); color: rgba(255,255,255,.6); padding: 48px 0; font-size: 14px; }
+  footer .wrap { display: flex; flex-wrap: wrap; gap: 20px; justify-content: space-between; align-items: center; }
+  .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+  :focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
+  @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } .btn { transition: none; } }
+</style>
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-shield" viewBox="0 0 24 24"><path fill="currentColor" d="M12 2 4 5v6c0 5 3.4 9.7 8 11 4.6-1.3 8-6 8-11V5l-8-3Zm-1.2 14.2-3.5-3.5 1.4-1.4 2.1 2.1 4.9-4.9 1.4 1.4-6.3 6.3Z"/></symbol>
+  <symbol id="i-msg" viewBox="0 0 24 24"><path fill="currentColor" d="M4 3h16a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H8l-5 4V5a2 2 0 0 1 1-2Zm3 6v2h10V9H7Zm0 4v2h7v-2H7Z"/></symbol>
+  <symbol id="i-cpu" viewBox="0 0 24 24"><path fill="currentColor" d="M9 2h2v2h2V2h2v2h2a2 2 0 0 1 2 2v2h2v2h-2v2h2v2h-2v2a2 2 0 0 1-2 2h-2v2h-2v-2h-2v2H9v-2H7a2 2 0 0 1-2-2v-2H3v-2h2v-2H3V8h2V6a2 2 0 0 1 2-2h2V2Zm0 7v6h6V9H9Z"/></symbol>
+  <symbol id="i-bell" viewBox="0 0 24 24"><path fill="currentColor" d="M12 22a2.5 2.5 0 0 0 2.4-2h-4.8a2.5 2.5 0 0 0 2.4 2Zm7-6V11a7 7 0 0 0-5.5-6.8V3a1.5 1.5 0 0 0-3 0v1.2A7 7 0 0 0 5 11v5l-2 2v1h18v-1l-2-2Z"/></symbol>
+  <symbol id="i-user" viewBox="0 0 24 24"><path fill="currentColor" d="M12 12a5 5 0 1 0 0-10 5 5 0 0 0 0 10Zm0 2c-4.4 0-8 2.2-8 5v3h16v-3c0-2.8-3.6-5-8-5Z"/></symbol>
+  <symbol id="i-link" viewBox="0 0 24 24"><path fill="currentColor" d="M10.6 13.4a1 1 0 0 1 0-1.4l3.5-3.5a1 1 0 1 1 1.4 1.4L12 13.4a1 1 0 0 1-1.4 0ZM7.8 20a4.8 4.8 0 0 1-3.4-8.2l2.8-2.8 1.4 1.4-2.8 2.8a2.8 2.8 0 0 0 4 4l2.8-2.8 1.4 1.4-2.8 2.8A4.8 4.8 0 0 1 7.8 20Zm9-5-1.4-1.4 2.8-2.8a2.8 2.8 0 0 0-4-4l-2.8 2.8L10 8.2l2.8-2.8a4.8 4.8 0 1 1 6.8 6.8L16.8 15Z"/></symbol>
+  <symbol id="i-gift" viewBox="0 0 24 24"><path fill="currentColor" d="M20 7h-2.2A3 3 0 0 0 12 3.8 3 3 0 0 0 6.2 7H4a1 1 0 0 0-1 1v3h8V7h2v4h8V8a1 1 0 0 0-1-1ZM9 7a1 1 0 1 1 1-1v1H9Zm6 0h-1V6a1 1 0 1 1 1 1ZM4 13v7a1 1 0 0 0 1 1h6v-8H4Zm9 8h6a1 1 0 0 0 1-1v-7h-7v8Z"/></symbol>
+  <symbol id="i-lock" viewBox="0 0 24 24"><path fill="currentColor" d="M17 9V7A5 5 0 0 0 7 7v2H5v13h14V9h-2ZM9 7a3 3 0 0 1 6 0v2H9V7Zm4 10.7V19h-2v-1.3a2 2 0 1 1 2 0Z"/></symbol>
+  <symbol id="i-store" viewBox="0 0 24 24"><path fill="currentColor" d="M4 4h16l1 5a3 3 0 0 1-5 2.2A3 3 0 0 1 12 11a3 3 0 0 1-4 .2A3 3 0 0 1 3 9l1-5Zm1 9.9V20h6v-4h2v4h6v-6.1a5 5 0 0 1-3-.6 5 5 0 0 1-4 .7 5 5 0 0 1-4-.7 5 5 0 0 1-3 .6Z"/></symbol>
+</svg>
+
+<header class="nav">
+  <div class="wrap">
+    <a class="logo" href="#top" aria-label="FraudX home">
+      <span class="logo-mark"><svg width="18" height="18" style="color:#111418"><use href="#i-shield"/></svg></span>
+      FraudX
+    </a>
+    <nav class="nav-links" aria-label="Sections">
+      <a href="#problem">Problem</a>
+      <a href="#how">How it works</a>
+      <a href="#anatomy">Example</a>
+      <a href="#threats">Scams caught</a>
+      <a href="#platforms">Platforms</a>
+      <a href="#build">Build</a>
+    </nav>
+    <a class="btn btn-brand btn-sm nav-cta" href="https://github.com/agyesam12/fraudxproject" rel="noopener">View code</a>
+  </div>
+</header>
+
+<main id="top">
+  <!-- HERO + LIVE DEMO -->
+  <section class="hero" aria-labelledby="hero-title">
+    <div class="wrap hero-grid">
+      <div class="pitch">
+        <div class="tags">
+          <span class="tag">Trust, Security &amp; Digital Identity</span>
+          <span class="tag">Everyday Payments &amp; Financial Access</span>
+        </div>
+        <h1 id="hero-title">Stop MoMo scams <em>before</em> the money moves.</h1>
+        <p class="lede">FraudX reads MoMo-related messages as they arrive, scores the fraud risk with AI, and warns the customer in plain language <strong style="color:#fff">before</strong> they click a link, share their PIN or send money.</p>
+        <div class="cta-row">
+          <a class="btn btn-brand" href="#demo-controls">Try the live demo</a>
+          <a class="btn btn-ghost" href="#how">How it works</a>
+        </div>
+        <div class="facts" role="list">
+          <div class="fact" role="listitem"><b>10</b><span>scam types detected</span></div>
+          <div class="fact" role="listitem"><b>20+</b><span>fraud signals</span></div>
+          <div class="fact" role="listitem"><b>&lt;1 ms</b><span>to check a message</span></div>
+          <div class="fact" role="listitem"><b>0</b><span>messages uploaded</span></div>
+        </div>
+      </div>
+
+      <div class="phone-col">
+        <div class="phone">
+          <div class="screen">
+            <div class="screen-loading" id="screen-loading">Loading the FraudX app…</div>
+            <iframe id="app-frame" src="app/" title="FraudX app, live interactive demo" loading="eager"></iframe>
+          </div>
+        </div>
+        <p class="phone-note">This is the real app, running in your browser. <a href="app/" target="_blank" rel="noopener">Open full screen ↗</a></p>
+      </div>
+
+      <div class="controls" id="demo-controls" aria-labelledby="controls-title">
+        <h3 id="controls-title"><span class="live-dot" aria-hidden="true"></span>Control the phone</h3>
+        <p>Send a text message to the phone and watch FraudX step in the moment it arrives. Tap the alert on the phone to see why.</p>
+        <div class="control-row">
+          <button class="btn btn-brand btn-sm" id="btn-simulate" type="button">⚡ Simulate incoming SMS</button>
+          <button class="btn btn-ghost btn-sm" id="btn-reset" type="button">Reset demo</button>
+        </div>
+        <form id="custom-form" autocomplete="off">
+          <div style="display:grid; gap:12px">
+            <div>
+              <label for="f-sender">From</label>
+              <input id="f-sender" value="0551239876" maxlength="40" required>
+            </div>
+            <div>
+              <label for="f-body">Write your own test SMS</label>
+              <textarea id="f-body" maxlength="480" required placeholder="Type any message, e.g. one you received…"></textarea>
+            </div>
+            <div class="presets" aria-label="Example messages">
+              <button type="button" class="preset" data-s="0551239876" data-b="Please I sent GHS 200 to your number by mistake. Kindly send it back to 0551239876, I beg you.">Refund scam</button>
+              <button type="button" class="preset" data-s="MTN-Rewards" data-b="Congratulations! You have won GHS 3,000 in the MoMo loyalty draw. Pay GHS 30 activation fee to receive your prize.">Fake prize</button>
+              <button type="button" class="preset" data-s="+233209183746" data-b="MTN customer care: your wallet is restricted. Reply with your PIN to avoid closure.">PIN request</button>
+              <button type="button" class="preset" data-s="0268840021" data-b="Update your MoMo details today or your account will be blocked. Click https://mtn-gh-momo.live/verify">Phishing link</button>
+              <button type="button" class="preset" data-s="MobileMoney" data-b="Payment received for GHS 80.00 from ESI BOATENG. Current Balance: GHS 530.00. Transaction ID: 49105550123. Fee charged: GHS 0.00.">Real receipt</button>
+            </div>
+            <button class="btn btn-dark btn-sm" type="submit" style="background:#fff;color:#111418">Send to phone</button>
+            <p class="status" id="status" role="status" aria-live="polite"></p>
+          </div>
+        </form>
+      </div>
+    </div>
+  </section>
+
+  <!-- PROBLEM -->
+  <section id="problem" aria-labelledby="problem-title">
+    <div class="wrap">
+      <div class="section-head">
+        <span class="eyebrow">The problem</span>
+        <h2 id="problem-title">Customers find out they were scammed after the money is gone.</h2>
+        <p class="lede">Mobile money scams use fake MTN messages, impersonation, fraudulent promotions, phishing links and social engineering. Today, protection mostly depends on customers recognising the scam themselves.</p>
+      </div>
+      <div class="grid grid-3">
+        <article class="card">
+          <div class="icon red"><svg><use href="#i-msg"/></svg></div>
+          <h3>Fake MTN messages</h3>
+          <p>Lookalike sender names and fake “payment received” alerts are built to look exactly like real MoMo receipts.</p>
+        </article>
+        <article class="card">
+          <div class="icon red"><svg><use href="#i-user"/></svg></div>
+          <h3>Impersonation and pressure</h3>
+          <p>“Customer care agents” threaten to block a wallet unless the customer shares a PIN or calls a personal number right away.</p>
+        </article>
+        <article class="card">
+          <div class="icon red"><svg><use href="#i-gift"/></svg></div>
+          <h3>Promotions and phishing</h3>
+          <p>Fake prizes, loans and free bundles ask for a “processing fee” or send people to fake MTN websites that steal their PIN.</p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- HOW -->
+  <section id="how" aria-labelledby="how-title" style="padding-top:0">
+    <div class="wrap">
+      <div class="section-head">
+        <span class="eyebrow">How it works</span>
+        <h2 id="how-title">Protection that starts in the inbox.</h2>
+        <p class="lede">FraudX steps in where most scams begin, which is the customer’s messages. It warns them before they act, not after they report a loss.</p>
+      </div>
+      <div class="steps">
+        <div class="step">
+          <h3>A message arrives</h3>
+          <p>On Android, FraudX sees every new SMS the moment it lands. On any phone, customers can paste a message they are unsure about.</p>
+        </div>
+        <div class="step">
+          <h3>AI checks it on the phone</h3>
+          <p>More than 20 fraud signals, covering the sender, links, PIN requests and scam stories, are combined with an AI language model. The result is a 0–100 risk score. Nothing is uploaded.</p>
+        </div>
+        <div class="step">
+          <h3>The customer is warned in plain language</h3>
+          <p>A risky message triggers an instant alert that says what the scam is, why FraudX flagged it and what to do. Links in it are disabled, and one tap reports it to MTN.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ANATOMY -->
+  <section id="anatomy" aria-labelledby="anatomy-title" style="background:#EFEDE5">
+    <div class="wrap">
+      <div class="section-head">
+        <span class="eyebrow">Inside a warning</span>
+        <h2 id="anatomy-title">It doesn’t just block. It explains.</h2>
+        <p class="lede">This is a common scam: a fake credit alert that tricks the customer into <em>approving</em> a payment out of their own wallet. Here is exactly what FraudX finds.</p>
+      </div>
+      <div class="anatomy">
+        <div class="sms">
+          <div class="sms-head">
+            <div class="avatar">M</div>
+            <div>
+              <b><mark>M0biIeMoney<sup>3</sup></mark></b>
+              <div class="footnote">Looks like “MobileMoney”, but it uses a zero and a capital I</div>
+            </div>
+          </div>
+          <div class="sms-bubble">
+            <mark>You have received<sup>2</sup></mark> GHS 1,200.00 from MTN Rewards. To withdraw, <mark>dial *170*3*1# and enter your PIN to approve<sup>4</sup></mark> the transfer.
+          </div>
+          <div class="verdict">
+            <svg class="ring" width="72" height="72" viewBox="0 0 72 72" role="img" aria-label="Risk score 94 out of 100">
+              <circle cx="36" cy="36" r="30" fill="none" stroke="rgba(255,255,255,.14)" stroke-width="7"/>
+              <circle cx="36" cy="36" r="30" fill="none" stroke="#FF5A4E" stroke-width="7" stroke-linecap="round" stroke-dasharray="177.2 188.5" transform="rotate(-90 36 36)"/>
+              <text x="36" y="42" text-anchor="middle" fill="#fff" font-family="Plus Jakarta Sans, sans-serif" font-weight="800" font-size="20">94</text>
+            </svg>
+            <div>
+              <small>LIKELY SCAM</small>
+              <b>Someone is trying to get your PIN or code</b>
+            </div>
+          </div>
+        </div>
+
+        <div class="signals">
+          <div class="signal">
+            <span class="sig-num">1</span>
+            <div><h3>Asks for your PIN or code</h3><p>MTN will never ask for your MoMo PIN by SMS. Anyone who has it can empty the wallet.</p></div>
+            <span class="weight">+45</span>
+          </div>
+          <div class="signal">
+            <span class="sig-num">2</span>
+            <div><h3>Money-received alert from a non-MTN sender</h3><p>Real MoMo receipts only come from “MobileMoney”. The money may not exist, so check *170# first.</p></div>
+            <span class="weight">+35</span>
+          </div>
+          <div class="signal">
+            <span class="sig-num">3</span>
+            <div><h3>Sender imitates MTN</h3><p>A name within two characters of an official MTN sender ID, but not one of them.</p></div>
+            <span class="weight">+30</span>
+          </div>
+          <div class="signal">
+            <span class="sig-num">4</span>
+            <div><h3>Trick to approve a payment</h3><p>Entering a PIN on this prompt approves money <em>leaving</em> the wallet. It is presented as “receiving” money.</p></div>
+            <span class="weight">+30</span>
+          </div>
+          <div class="ai-row">
+            <div style="display:flex; justify-content:space-between; font-weight:700"><span>AI language check</span><span style="color:var(--danger)">82% similar to known scams</span></div>
+            <div class="bar"><i style="width:82%"></i></div>
+            <p class="footnote">Scam wording found: “approve”, “pin”, “withdraw”, “enter”.</p>
+          </div>
+          <p class="footnote">This is real output from the FraudX engine. You can reproduce it with the “PIN request” and other examples in the demo above.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SCORING -->
+  <section class="dark" aria-labelledby="score-title">
+    <div class="wrap">
+      <div class="section-head">
+        <span class="eyebrow">The detection engine</span>
+        <h2 id="score-title">Fraud rules you can explain, plus AI that reads the language.</h2>
+        <p class="lede">Rules make every warning explainable. The language model catches scams phrased in ways the rules don’t cover yet. Together they give one risk score.</p>
+      </div>
+      <div class="pipeline">
+        <div class="node">
+          <span class="pct">65%</span>
+          <h3>Fraud rules</h3>
+          <ul>
+            <li>Sender: official ID, lookalike, or personal number claiming to be MTN</li>
+            <li>Links: fake MTN domains, link shorteners, raw IP addresses</li>
+            <li>PIN/OTP requests and payment-approval tricks</li>
+            <li>Refund, prize-fee, threat and emergency stories</li>
+          </ul>
+        </div>
+        <div class="op" aria-hidden="true">+</div>
+        <div class="node">
+          <span class="pct">35%</span>
+          <h3>AI language model</h3>
+          <p>A Naive Bayes model on words and word pairs. It runs entirely on the phone and names the words that made a message look suspicious.</p>
+        </div>
+        <div class="op" aria-hidden="true">=</div>
+        <div class="node">
+          <h3>Risk score 0–100</h3>
+          <p>Safety floors apply: any PIN request scores at least 85, even from a trusted contact. A fake MTN website scores at least 72.</p>
+          <div class="scale" aria-label="Balanced thresholds: safe below 35, suspicious 35 to 64, scam 65 and above">
+            <span style="background:var(--safe-bg);color:var(--safe)">Safe</span>
+            <span style="background:var(--warn-bg);color:var(--warn)">Suspicious</span>
+            <span style="background:var(--danger-bg);color:var(--danger)">Scam</span>
+          </div>
+          <div class="scale-ticks"><span>0</span><span>35</span><span>65</span><span>100</span></div>
+          <p style="font-size:13px">Customers choose Relaxed, Balanced or Strict. Strict suits family members who are new to MoMo.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- THREATS -->
+  <section id="threats" aria-labelledby="threats-title">
+    <div class="wrap">
+      <div class="section-head">
+        <span class="eyebrow">What it catches</span>
+        <h2 id="threats-title">Ten scam patterns seen on MoMo.</h2>
+      </div>
+      <div class="grid grid-5">
+        <div class="threat"><h3>PIN / code theft</h3><p>Any request to share a PIN or OTP.</p><q>Reply with your MoMo PIN to activate</q></div>
+        <div class="threat"><h3>MTN impersonation</h3><p>Lookalike senders, fake agents.</p><q>MTN customer care: call 0209…</q></div>
+        <div class="threat"><h3>Phishing links</h3><p>Fake MTN sites, hidden links.</p><q>mtn-gh-momo.live/verify</q></div>
+        <div class="threat"><h3>Fake promotions</h3><p>Prizes, loans, free data that need a fee first.</p><q>Pay GHS 75 processing fee</q></div>
+        <div class="threat"><h3>Refund scams</h3><p>“Sent by mistake, send it back.”</p><q>I mistakenly sent GHS 450</q></div>
+        <div class="threat"><h3>Fake credit alerts</h3><p>“Money received” from non-MTN senders.</p><q>You have received GHS 1,200</q></div>
+        <div class="threat"><h3>Payment approval tricks</h3><p>Getting people to approve a payment out.</p><q>Dial *170# and enter PIN to approve</q></div>
+        <div class="threat"><h3>Account threats</h3><p>Fake suspension and closure warnings.</p><q>Wallet suspended within 24 hours</q></div>
+        <div class="threat"><h3>Emergency requests</h3><p>A “relative” in trouble asking for money.</p><q>Mum I am stranded, send GHS 300</q></div>
+        <div class="threat"><h3>Identity theft</h3><p>Requests for Ghana Card or date of birth.</p><q>Send your Ghana Card details</q></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- WHO + DIFFERENT -->
+  <section aria-labelledby="who-title" style="padding-top:0">
+    <div class="wrap">
+      <div class="grid grid-2" style="gap:40px">
+        <div>
+          <div class="section-head" style="margin-bottom:24px">
+            <span class="eyebrow">Who benefits</span>
+            <h2 id="who-title">Safer money for everyone on MoMo.</h2>
+          </div>
+          <div class="grid">
+            <article class="card"><div class="icon"><svg><use href="#i-user"/></svg></div><h3>MoMo customers</h3><p>Especially people less familiar with digital fraud. They get protection without needing to be security experts.</p></article>
+            <article class="card"><div class="icon"><svg><use href="#i-shield"/></svg></div><h3>MTN</h3><p>Lower fraud losses, fewer disputes, more customer trust, and scam reports straight from the inbox.</p></article>
+            <article class="card"><div class="icon"><svg><use href="#i-store"/></svg></div><h3>Merchants and the wider ecosystem</h3><p>More confidence in digital payments means more people using them.</p></article>
+          </div>
+        </div>
+        <div>
+          <div class="section-head" style="margin-bottom:24px">
+            <span class="eyebrow">What makes it different</span>
+            <h2>From reacting after losses to preventing them.</h2>
+          </div>
+          <div class="grid">
+            <article class="card"><div class="icon"><svg><use href="#i-bell"/></svg></div><h3>Acts before the customer does</h3><p>Other protection responds after fraud is reported. FraudX warns at the moment the scam message arrives.</p></article>
+            <article class="card"><div class="icon"><svg><use href="#i-msg"/></svg></div><h3>Explains, in plain words</h3><p>Every warning says what the scam is and what to do. Customers learn to spot the next one themselves.</p></article>
+            <article class="card"><div class="icon"><svg><use href="#i-lock"/></svg></div><h3>Private by design</h3><p>Messages are analysed on the phone. No SMS content leaves the device.</p></article>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- PLATFORMS -->
+  <section id="platforms" aria-labelledby="platforms-title" style="background:#EFEDE5">
+    <div class="wrap">
+      <div class="section-head">
+        <span class="eyebrow">Built for real phones</span>
+        <h2 id="platforms-title">One app for Android and iPhone.</h2>
+        <p class="lede">Built with React Native (Expo), so one codebase runs on both platforms. Here is what each platform allows.</p>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th scope="col">Capability</th><th scope="col">Android</th><th scope="col">iPhone</th></tr></thead>
+          <tbody>
+            <tr><td>Read incoming SMS</td><td><span class="yes">Yes.</span> Uses a custom native module (Kotlin) with the READ_SMS permission</td><td><span class="no">No.</span> Apple does not let apps read messages</td></tr>
+            <tr><td>Real-time alerts</td><td><span class="yes">Yes.</span> Every new SMS is scored as it lands</td><td>Planned: iOS SMS filter extension for unknown senders</td></tr>
+            <tr><td>Check a message manually</td><td><span class="yes">Yes</span></td><td><span class="yes">Yes.</span> Paste into “Check SMS”</td></tr>
+            <tr><td>Report, block, trust sender</td><td><span class="yes">Yes</span></td><td><span class="yes">Yes</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="callout"><b>For production:</b> Google Play restricts the SMS permission to approved use cases. We expect FraudX to ship as an MTN-distributed app with an anti-fraud policy declaration, or as a feature inside the MoMo app.</p>
+    </div>
+  </section>
+
+  <!-- BUILD -->
+  <section id="build" aria-labelledby="build-title">
+    <div class="wrap">
+      <div class="grid grid-2" style="gap:40px; align-items:start">
+        <div class="section-head" style="margin:0">
+          <span class="eyebrow">Under the hood</span>
+          <h2 id="build-title">Run the prototype yourself.</h2>
+          <p class="lede">The source code, detection engine and tests are open on GitHub.</p>
+          <div class="pills">
+            <span class="pill">React Native</span><span class="pill">Expo SDK 57</span><span class="pill">TypeScript</span>
+            <span class="pill">Expo Router</span><span class="pill">Kotlin native module</span><span class="pill">On-device AI</span>
+          </div>
+          <div><a class="btn btn-dark" href="https://github.com/agyesam12/fraudxproject" rel="noopener">Open the repository</a></div>
+        </div>
+        <pre><span class="c"># run the app</span>
+cd fraudx
+npm install
+npx expo start      <span class="c"># w = web, or scan with Expo Go</span>
+
+<span class="c"># test the detection engine</span>
+npm test
+
+<span class="c"># installable Android APK (reads real SMS)</span>
+npx eas-cli build -p android --profile preview</pre>
+      </div>
+
+      <div style="margin-top:72px">
+        <div class="section-head" style="margin-bottom:12px">
+          <span class="eyebrow">Next steps</span>
+          <h2>From prototype to production.</h2>
+        </div>
+        <div class="roadmap">
+          <div class="road"><b>Data</b><p>Train the AI model on MTN’s labelled fraud reports, then move to a small on-device transformer model.</p></div>
+          <div class="road"><b>Intelligence</b><p>Sync known scam numbers and domains from MTN’s fraud team to every phone.</p></div>
+          <div class="road"><b>Reporting</b><p>Connect “Report scam” to MTN’s fraud desk, so one customer’s report protects everyone.</p></div>
+          <div class="road"><b>Always on</b><p>Add Android background protection with notifications, and an iOS SMS filter extension.</p></div>
+          <div class="road"><b>Languages</b><p>Explain warnings in Twi, Ga and Ewe as well as English.</p></div>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <a class="logo" href="#top"><span class="logo-mark"><svg width="18" height="18" style="color:#111418"><use href="#i-shield"/></svg></span>FraudX</a>
+    <span>Prototype for MTN MoMo customers. Demo messages are fictional.</span>
+  </div>
+</footer>
+
+<script>
+(() => {
+  const frame = document.getElementById('app-frame');
+  const status = document.getElementById('status');
+  const loading = document.getElementById('screen-loading');
+  const form = document.getElementById('custom-form');
+  const sender = document.getElementById('f-sender');
+  const body = document.getElementById('f-body');
+
+  const hideLoading = () => { loading.hidden = true; };
+  frame.addEventListener('load', hideLoading);
+  try { if (frame.contentDocument && frame.contentDocument.readyState === 'complete' && frame.contentWindow.location.href !== 'about:blank') hideLoading(); } catch (e) { hideLoading(); }
+
+  const say = (text, kind = '') => { status.textContent = text; status.className = 'status ' + kind; };
+
+  // The app exposes window.__FRAUDX_DEMO__ once its state has loaded (same origin).
+  async function demoApi(timeoutMs = 8000) {
+    const start = Date.now();
+    while (Date.now() - start < timeoutMs) {
+      try {
+        const api = frame.contentWindow && frame.contentWindow.__FRAUDX_DEMO__;
+        if (api) return api;
+      } catch (e) {
+        break; // cross-origin (e.g. opened from file://)
+      }
+      await new Promise(r => setTimeout(r, 150));
+    }
+    throw new Error('unavailable');
+  }
+
+  // On narrow screens the phone sits above the controls; bring it into view.
+  function revealPhone() {
+    const r = frame.getBoundingClientRect();
+    if (r.top < 64 || r.bottom > innerHeight) frame.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+
+  async function withApi(fn, okText) {
+    try {
+      const api = await demoApi();
+      fn(api);
+      if (okText) say(okText, 'ok');
+      revealPhone();
+    } catch {
+      say('The demo phone is not ready. Open this page through GitHub Pages or a local web server.', 'err');
+    }
+  }
+
+  document.getElementById('btn-simulate').addEventListener('click', () =>
+    withApi(api => api.simulate(), 'A new SMS just arrived. Look at the phone.'));
+
+  document.getElementById('btn-reset').addEventListener('click', () =>
+    withApi(api => api.reset(), 'Demo reset to the sample inbox.'));
+
+  document.querySelectorAll('.preset').forEach(btn => btn.addEventListener('click', () => {
+    sender.value = btn.dataset.s;
+    body.value = btn.dataset.b;
+    body.focus();
+  }));
+
+  form.addEventListener('submit', e => {
+    e.preventDefault();
+    const msg = { sender: sender.value.trim() || 'Unknown', body: body.value.trim() };
+    if (!msg.body) return;
+    withApi(api => api.receive(msg), 'Delivered. If it looks risky, FraudX alerts you on the phone. Safe messages go straight to Messages.');
+  });
+})();
+</script>
+</body>
+</html>

@@ -1,5 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createContext, useCallback, useContext, useEffect, useMemo, useReducer, type ReactNode } from 'react';
+import { Platform } from 'react-native';
 
 import { DEMO_INBOX, INCOMING_POOL } from '@/data/demoMessages';
 import { analyzeMessage, normalizeSender, type Analysis, type AnalysisContext, type RawMessage, type Sensitivity } from '@/engine';
@@ -236,6 +237,22 @@ export function FraudXProvider({ children }: { children: ReactNode }) {
       messages: [{ ...sample, id: newId('sim'), receivedAt: Date.now(), source: 'demo', read: false, reported: false }],
     });
   }, [state.simCursor]);
+
+  // Web demo bridge: lets the landing page (same origin, embedding this app in an
+  // iframe) push test SMS into the "phone" as if they had just arrived.
+  useEffect(() => {
+    if (Platform.OS !== 'web' || typeof window === 'undefined') return;
+    (window as unknown as { __FRAUDX_DEMO__: unknown }).__FRAUDX_DEMO__ = {
+      simulate: simulateIncoming,
+      receive: (msg: RawMessage) =>
+        dispatch({
+          type: 'add',
+          live: true,
+          messages: [{ ...msg, id: newId('web'), receivedAt: Date.now(), source: 'demo', read: false, reported: false }],
+        }),
+      reset: () => dispatch({ type: 'reset' }),
+    };
+  }, [simulateIncoming]);
 
   const saveManual = useCallback((msg: RawMessage) => {
     const id = newId('manual');
